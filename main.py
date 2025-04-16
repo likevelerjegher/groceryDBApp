@@ -254,7 +254,7 @@ def restoreTableWindow(parent):
 def createTableWindow(parent):
     window = tk.Toplevel(parent)
     window.title("Add New Table")
-    window.geometry("400x600")
+    window.geometry("400x400")
     window.configure(bg=mainBgColor)
 
     # Table name input
@@ -716,14 +716,25 @@ def queryChoiceWindow(parent):
         notebook.add(frame, text=category)
         tab_frames[category] = frame
 
-        canvas = tk.Canvas(frame, bg=mainBgColor)
+        canvas = tk.Canvas(frame, bg=mainBgColor, highlightthickness=0)
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=mainBgColor)
 
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e, c=canvas: c.configure(scrollregion=c.bbox("all"))
+        )
+
+        canvas_frame = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        def resize_canvas(event, canvas=canvas, window_id=canvas_frame):
+            canvas.itemconfig(window_id, width=event.width)
+
+        canvas.bind("<Configure>", resize_canvas)
+
         canvas.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        scrollbar.pack(side="right", fill="y")
 
         frame.canvas = canvas
         frame.scrollable_frame = scrollable_frame

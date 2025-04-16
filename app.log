@@ -1,38 +1,8 @@
-2025-04-16 15:23:06,904 - INFO - renameTable function is available
-2025-04-16 15:23:41,363 - INFO - Table 'temp' created successfully
-2025-04-16 15:23:43,131 - DEBUG - Retrieved tables: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'temp', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:23:43,132 - DEBUG - Updated combobox values: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'temp', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:23:43,133 - DEBUG - Column names for temp: ['id']
-2025-04-16 15:23:43,133 - DEBUG - Created and selected new table 'temp' with columns: ['id']
-2025-04-16 15:23:49,287 - DEBUG - Column names for temp: ['id']
-2025-04-16 15:23:49,296 - INFO - Table 'temp' dropped successfully
-2025-04-16 15:23:50,500 - DEBUG - Retrieved tables: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:23:50,501 - DEBUG - Updated combobox values: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:23:55,678 - DEBUG - Column names for Товар: ['id', 'name', 'country', 'category', 'price', 'supplier_id']
-2025-04-16 15:24:11,464 - INFO - Table 'temp' created successfully
-2025-04-16 15:24:12,533 - DEBUG - Retrieved tables: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'temp', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:24:12,545 - DEBUG - Updated combobox values: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'temp', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:24:12,547 - DEBUG - Column names for temp: ['id']
-2025-04-16 15:24:12,548 - DEBUG - Created and selected new table 'temp' with columns: ['id']
-2025-04-16 15:24:35,540 - DEBUG - Column names for temp: ['id']
-2025-04-16 15:24:42,573 - DEBUG - Column names for temp: ['id']
-2025-04-16 15:24:54,877 - DEBUG - Tables in modifyTableWindow: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'temp', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:25:05,710 - DEBUG - Executing query: ALTER TABLE grocery."temp" ADD COLUMN "second" integer
-2025-04-16 15:25:05,731 - DEBUG - Column names for temp: ['id', 'second']
-2025-04-16 15:25:05,731 - DEBUG - Updated colnames after adding column: ['id', 'second']
-2025-04-16 15:25:11,626 - DEBUG - Selected element: I024
-2025-04-16 15:25:13,948 - DEBUG - Opening update window with colnames: ['id', 'second']
-2025-04-16 15:25:16,227 - DEBUG - Executing update query: UPDATE grocery."temp" SET "id" = %s, "second" = %s WHERE "id" = %s
-2025-04-16 15:25:16,227 - DEBUG - Parameters: values=['1', '222'], whereValues=['1']
-2025-04-16 15:25:16,231 - DEBUG - Updated 1 rows
-2025-04-16 15:25:16,240 - DEBUG - Column names for temp: ['id', 'second']
-2025-04-16 15:25:27,127 - DEBUG - Selected element: I025
-2025-04-16 15:25:42,651 - DEBUG - Column names for temp: ['id', 'second']
-2025-04-16 15:25:42,660 - INFO - Table 'temp' dropped successfully
-2025-04-16 15:25:43,530 - DEBUG - Retrieved tables: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:25:43,532 - DEBUG - Updated combobox values: ['Заказ', 'Заказ_Товар', 'Клиент', 'Платеж', 'Поставщик', 'Склад', 'Сотрудник', 'Товар']
-2025-04-16 15:25:48,378 - DEBUG - Column names for Сотрудник: ['id', 'full_name', 'position', 'experience', 'salary']
-2025-04-16 15:26:02,460 - DEBUG - Selected element: I044
-2025-04-16 15:26:04,020 - DEBUG - Opening update window with colnames: ['id', 'full_name', 'position', 'experience', 'salary']
-2025-04-16 15:26:10,224 - DEBUG - Column names for Заказ: ['id', 'order_number', 'total_cost', 'order_date', 'client_id', 'employee_id', 'payment_id']
-2025-04-16 15:26:15,491 - DEBUG - Opening editCustomQueryWindow for query: df
+2025-04-16 15:46:51,822 - INFO - renameTable function is available
+2025-04-16 15:46:56,223 - DEBUG - deleteCustomQuery called for name: df
+2025-04-16 15:46:59,137 - DEBUG - Opening addCustomQueryWindow
+2025-04-16 15:47:13,156 - DEBUG - saveCustomQuery called with name: fdsaf, query: select * from grocery.temp
+2025-04-16 15:47:13,465 - DEBUG - Executing after_destroy for saveCustomQuery
+2025-04-16 15:47:17,162 - DEBUG - Opening editCustomQueryWindow for query: fdsaf
+2025-04-16 15:47:20,074 - DEBUG - Opening editCustomQueryWindow for query: fdsaf
+2025-04-16 15:47:23,823 - DEBUG - deleteCustomQuery called for name: fdsaf
