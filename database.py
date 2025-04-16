@@ -119,20 +119,27 @@ def getTables(conn):
 def createTable(conn, tableName, columns):
     with conn.cursor() as cursor:
         try:
-            columns_def = ", ".join([f"{col[0]} {col[1]}" for col in columns])
+            # Ensure columns is a list of (name, type) tuples
+            columns_def = ", ".join([f'"{col[0]}" {col[1]}' for col in columns])
             cursor.execute(f'CREATE TABLE grocery."{tableName}" ({columns_def})')
+            logging.info(f"Table '{tableName}' created successfully")
             return None
         except psycopg2.Error as e:
-            return f"Error creating table: {str(e)}"
+            logging.error(f"Error creating table '{tableName}': {str(e)}")
+            return f"Failed to create table: {str(e)}"
 
 def dropTable(conn, tableName):
     with conn.cursor() as cursor:
         try:
+            # Create a backup before dropping
             backupTable(conn, tableName)
-            cursor.execute(f'DROP TABLE grocery."{tableName}"')
+            # Execute DROP TABLE with CASCADE to handle dependencies
+            cursor.execute(f'DROP TABLE grocery."{tableName}" CASCADE')
+            logging.info(f"Table '{tableName}' dropped successfully")
             return None
         except psycopg2.Error as e:
-            return f"Error dropping table: {str(e)}"
+            logging.error(f"Error dropping table '{tableName}': {str(e)}")
+            return f"Failed to drop table: {str(e)}"
 
 def addColumn(conn, table_name, column_name, column_type):
     try:

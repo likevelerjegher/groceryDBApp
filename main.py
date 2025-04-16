@@ -253,31 +253,88 @@ def restoreTableWindow(parent):
 
 def createTableWindow(parent):
     window = tk.Toplevel(parent)
-    window.title("Create New Table")
-    window.geometry("400x500")
+    window.title("Add New Table")
+    window.geometry("400x600")
     window.configure(bg=mainBgColor)
 
-    name_entry = ttk.Entry(window)
-    ttk.Label(window, text="Table Name:", background=mainBgColor).pack()
-    name_entry.pack(pady=5)
+    # Table name input
+    ttk.Label(window, text="Enter the name for the table:", background=mainBgColor).pack(pady=5)
+    table_name_entry = ttk.Entry(window)
+    table_name_entry.pack(pady=5)
 
+    # Column count input
+    ttk.Label(window, text="How many columns will be in the table?", background=mainBgColor).pack(pady=5)
+    column_count_entry = ttk.Entry(window)
+    column_count_entry.pack(pady=5)
+
+    # Frame for column entries
     columns_frame = tk.Frame(window, bg=mainBgColor)
-    columns_frame.pack()
-    columns = []
+    columns_frame.pack(pady=10)
+    column_entries = []
 
-    def add_column_field():
-        frame = tk.Frame(columns_frame, bg=mainBgColor)
-        frame.pack(pady=2)
-        name = ttk.Entry(frame, width=15)
-        type_ = ttk.Entry(frame, width=15)
-        name.pack(side=tk.LEFT)
-        type_.pack(side=tk.LEFT)
-        columns.append((name, type_))
+    def update_column_fields(event=None):
+        for widget in columns_frame.winfo_children():
+            widget.destroy()
+        try:
+            column_count = int(column_count_entry.get())
+            if column_count <= 0:
+                messagebox.showwarning("Input Error", "Please enter a positive number for columns.")
+                return
+        except ValueError:
+            messagebox.showwarning("Input Error", "Please enter a valid number for columns.")
+            return
+        column_entries.clear()
+        for i in range(column_count):
+            ttk.Label(columns_frame, text=f"Column {i+1} (e.g., 'id SERIAL'):", background=mainBgColor).pack(pady=2)
+            entry = ttk.Entry(columns_frame)
+            entry.pack(pady=2)
+            column_entries.append(entry)
 
-    tk.Button(window, text="Add Column", command=add_column_field, bg='#666666', fg='#333333',
+    column_count_entry.bind("<Return>", update_column_fields)
+    tk.Button(window, text="Generate Column Fields", command=update_column_fields, bg='#666666', fg='#333333',
               font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
-    tk.Button(window, text="Create", command=lambda: createTableAction(name_entry.get(), columns, window),
-              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
+
+    def create_table():
+        table_name = table_name_entry.get().strip()
+        if not table_name:
+            messagebox.showwarning("Input Error", "Please enter a table name.")
+            return
+        try:
+            column_count = int(column_count_entry.get())
+            if column_count <= 0:
+                messagebox.showwarning("Input Error", "Please enter a positive number for columns.")
+                return
+        except ValueError:
+            messagebox.showwarning("Input Error", "Please enter a valid number for columns.")
+            return
+        columns = []
+        for entry in column_entries:
+            col_def = entry.get().strip()
+            if not col_def:
+                messagebox.showwarning("Input Error", "Please enter names and types for all columns.")
+                return
+            # Split column definition into name and type
+            parts = col_def.split()
+            if len(parts) < 2:
+                messagebox.showwarning("Input Error", f"Invalid column definition: '{col_def}'. Use format 'name type'.")
+                return
+            col_name = parts[0]
+            col_type = ' '.join(parts[1:])
+            columns.append((col_name, col_type))
+        result = createTable(conn, table_name, columns)
+        if result:
+            messagebox.showerror("Error", result)
+        else:
+            messagebox.showinfo("Success", f"Table '{table_name}' created successfully!")
+            refreshTableList(parent)
+            selectedTable.set(table_name)
+            data, new_colnames = getTableData(conn, table_name)
+            updateTable(data, new_colnames)
+            logging.debug(f"Created and selected new table '{table_name}' with columns: {new_colnames}")
+            window.destroy()
+
+    tk.Button(window, text="Create Table", command=create_table, bg='#666666', fg='#333333',
+              font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=10)
 
 
 def createTableAction(table_name, columns, window):
@@ -298,45 +355,42 @@ def createTableAction(table_name, columns, window):
             logging.debug(f"Selected new table {table_name} with columns: {colnames}")
 
 
-def dropTableWindow(table_var, tree):
-    if not table_var.get():
+def dropTableWindow(parent):
+    if not selectedTable.get() or selectedTable.get() == "---":
         messagebox.showerror("Error", "Please select a table first")
         return
 
-    window = tk.Toplevel()
-    window.title("Drop Table")
-    window.geometry("300x150")
-    window.configure(bg=mainBgColor)
+    # Use tkinter.messagebox.askyesno for confirmation
+    if not messagebox.askyesno("Confirm Deletion", f"Are you sure you want to drop the table '{selectedTable.get()}'?"):
+        return
 
-    ttk.Label(window, text=f"Are you sure you want to drop table '{table_var.get()}'?", background=mainBgColor).pack(
-        pady=10)
-    tk.Button(window, text="Drop", command=lambda: dropTableAction(table_var.get(), window, tree), bg='#666666',
-              fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=10)
-    tk.Button(window, text="Cancel", command=window.destroy, bg='#666666', fg='#333333', font=('Arial', 12, 'bold'),
-              pady=8, padx=10).pack(pady=5)
+    # Call dropTableAction
+    dropTableAction(selectedTable.get(), parent)
 
-
-def dropTableAction(table_name, window, tree):
+def dropTableAction(table_name, parent):
     global selectedTable, colnames, table, selectedElement
     if not table_name:
         messagebox.showerror("Error", "No table selected")
         return
+
     result = dropTable(conn, table_name)
     if result:
         messagebox.showerror("Error", result)
+        logging.error(f"Drop table failed: {result}")
     else:
-        window.destroy()
-        tables = getTables(conn)
-        selectedTable['values'] = tables
-        logging.debug(f"Updated combobox values: {tables}")
+        messagebox.showinfo("Success", f"Table '{table_name}' dropped successfully!")
+        # Refresh the table list
+        refreshTableList(parent)
+        # Clear the table display if the dropped table was selected
         if selectedTable.get() == table_name:
-            selectedTable.set('')
+            selectedTable.set('---')
             colnames = None
             selectedElement = None
             table.delete(*table.get_children())
             table['columns'] = []
             logging.debug("Cleared table UI after dropping selected table")
-        showColumns('', tree)
+        # Disable CRUD buttons
+        blockCRUD(True)
 
 
 def modifyTableWindow(parent):
@@ -836,11 +890,23 @@ def blockCRUD(block):
         button.config(state=tk.DISABLED if block else tk.NORMAL)
 
 
-def refreshTableList():
+def refreshTableList(parent):
     global selectedTable
-    tables = getTables(conn)
-    selectedTable['values'] = tables
-    logging.debug(f"Updated combobox values: {tables}")
+    try:
+        tables = getTables(conn)
+        # Find the Combobox widget in the table choice frame
+        for widget in parent.grid_slaves(row=0, column=0):
+            if isinstance(widget, tk.Frame):
+                for child in widget.winfo_children():
+                    if isinstance(child, ttk.Combobox):
+                        child['values'] = tables + ['---']
+                        if selectedTable.get() not in tables and selectedTable.get() != '---':
+                            selectedTable.set('---')
+                        break
+        logging.debug(f"Updated combobox values: {tables}")
+    except Exception as e:
+        logging.error(f"Error refreshing table list: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh table list: {str(e)}")
 
 
 def onSelectElement(event):
