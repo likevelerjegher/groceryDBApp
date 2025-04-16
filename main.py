@@ -20,21 +20,120 @@ except NameError:
 mainBgColor = "#eaeaea"
 
 QUERIES = {
-    "Lab 4": [
-        ("Employees with >10 years experience", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 10'),
-        ("Employees with >5 years experience sorted",
-         'SELECT * FROM grocery."Сотрудник" WHERE experience > 5 ORDER BY full_name'),
-        ("All products sorted by price", 'SELECT * FROM grocery."Товар" ORDER BY price'),
-        ("All suppliers", 'SELECT * FROM grocery."Поставщик"'),
-        ("Meat warehouses", 'SELECT * FROM grocery."Склад" WHERE storage_location = \'Мясной склад\''),
-    ],
-    "Lab 5": [
-        ("Average product price", 'SELECT AVG(price) AS Average_salary FROM grocery."Товар"'),
-        ("Count of sellers", 'SELECT COUNT(position) FROM grocery."Сотрудник" WHERE position LIKE \'%продавец\''),
-        ("Max warehouse temperature", 'SELECT MAX(temperature) AS Max_Temperature FROM grocery."Склад"'),
-        ("Minimum order amount", 'SELECT MIN(total_cost) AS mininal_total_cost FROM grocery."Заказ"'),
-        ("Total product quantity", 'SELECT SUM(product_quantity) AS total_product_quantity FROM grocery."Склад"'),
-    ],
+"Lab 4": [
+    ("Вывести всех сотрудников с опытом работы больше 10 лет", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 10'),
+    ("Вывести всех сотрудников с опытом работы больше 5 лет, отсортированных по ФИО", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 5 ORDER BY full_name'),
+    ("Вывести все товары, отсортированные по цене", 'SELECT * FROM grocery."Товар" ORDER BY price'),
+    ("Вывести все данные из таблицы Поставщик", 'SELECT * FROM grocery."Поставщик"'),
+    ("Вывести все склады, которые имеют расположение “Мясной склад”", 'SELECT * FROM grocery."Склад" WHERE storage_location = \'Мясной склад\''),
+    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 и стоимостью продукта более 12", 'SELECT * FROM grocery."Заказ" CROSS JOIN grocery."Товар" WHERE grocery."Заказ".total_cost > 430 AND grocery."Товар".price > 12'),
+    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 или стоимостью продукта более 12", '''
+        SELECT grocery."Заказ".order_number,
+               grocery."Товар".name AS product_name
+        FROM grocery."Заказ"
+        FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id
+        FULL OUTER JOIN grocery."Товар" ON grocery."Заказ_Товар".product_id = grocery."Товар".id
+        WHERE grocery."Заказ".total_cost > 430 OR grocery."Товар".price > 12
+    '''),
+    ("Внутреннее соединение таблиц Товар и Поставщик", 'SELECT * FROM grocery."Товар" INNER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id'),
+    ("Внутреннее соединение таблиц Клиент и Заказ с условием, что сумма заказа от 200 до 400", 'SELECT grocery."Клиент".full_name, grocery."Заказ".total_cost, grocery."Заказ".order_date FROM grocery."Клиент" INNER JOIN grocery."Заказ" ON grocery."Клиент".id = grocery."Заказ".client_id WHERE grocery."Заказ".total_cost > 200 AND grocery."Заказ".total_cost < 400'),
+    ("Левое внешнее соединение таблиц Товар и Поставщик с ценой продукта более 20", 'SELECT * FROM grocery."Товар" LEFT OUTER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id WHERE grocery."Товар".price > 20'),
+    ("Левое внешнее соединение таблиц Платеж и Заказ", '''
+        SELECT grocery."Заказ".order_number,
+               grocery."Заказ".total_cost,
+               grocery."Заказ".order_date,
+               grocery."Заказ".client_id,
+               grocery."Заказ".employee_id,
+               grocery."Платеж".payment_number,
+               grocery."Платеж".payment_date,
+               grocery."Платеж".payment_time,
+               grocery."Платеж".payment_method,
+               grocery."Платеж".payment_status
+        FROM grocery."Заказ"
+        LEFT OUTER JOIN grocery."Платеж" ON grocery."Заказ".payment_id = grocery."Платеж".id
+    '''),
+    ("Правое внешнее соединение таблиц Товар и Заказ", '''
+        SELECT grocery."Товар".id AS product_id,
+               grocery."Товар".name AS product_name,
+               grocery."Товар".country,
+               grocery."Товар".category,
+               grocery."Товар".price,
+               grocery."Заказ_Товар".order_id,
+               grocery."Заказ".order_number,
+               grocery."Заказ".total_cost,
+               grocery."Заказ".order_date
+        FROM grocery."Товар"
+        RIGHT OUTER JOIN grocery."Заказ_Товар"
+            ON grocery."Товар".id = grocery."Заказ_Товар".product_id
+        LEFT JOIN grocery."Заказ"
+            ON grocery."Заказ_Товар".order_id = grocery."Заказ".id
+    '''),
+    ("Правое внешнее соединение таблиц Склад и Товар с условием, что количество товара на складе больше 100", '''
+        SELECT grocery."Склад".id,
+               grocery."Склад".storage_location,
+               grocery."Склад".product_quantity,
+               grocery."Товар".name,
+               grocery."Товар".price
+        FROM grocery."Склад"
+        RIGHT OUTER JOIN grocery."Товар"
+            ON grocery."Склад".product_id = grocery."Товар".id
+        WHERE grocery."Склад".product_quantity > 100
+    '''),
+    ("Полное внешнее соединение таблиц Товар и Заказ", 'SELECT grocery."Заказ".*, grocery."Заказ_Товар".* FROM grocery."Заказ" FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id'),
+    ("Полное внешнее соединение таблиц Сотрудник и Заказ", 'SELECT * FROM grocery."Сотрудник" FULL OUTER JOIN grocery."Заказ" ON grocery."Сотрудник".id = grocery."Заказ".employee_id'),
+    ("Вывести сотрудников, в названии должности которых есть “Старший”", 'SELECT * FROM grocery."Сотрудник" WHERE position LIKE \'%Старший%\'')
+],
+
+"Lab 5": [
+    ("Вывести среднюю арифметическую цену всех товаров", 'SELECT AVG(price) AS Average_salary FROM grocery."Товар"'),
+    ("Вывести количество строк, где должность сотрудника заканчивается на “продавец”", 'SELECT COUNT(position) FROM grocery."Сотрудник" WHERE position LIKE \'%продавец\''),
+    ("Вывести максимальную температуру склада", 'SELECT MAX(temperature) AS Max_Temperature FROM grocery."Склад"'),
+    ("Вывести минимальную сумму заказа", 'SELECT MIN(total_cost) AS mininal_total_cost FROM grocery."Заказ"'),
+    ("Вывести общее количество товаров на складах", 'SELECT SUM(product_quantity) AS total_product_quantity FROM grocery."Склад"'),
+    ("Вычислить количество товаров в каждой категории", 'SELECT COUNT(name) AS product_amount, category AS product_category FROM grocery."Товар" GROUP BY category'),
+    ("Вывести список всех ФИО из таблиц Сотрудник и Клиент, отсортированных в алфавитном порядке", 'SELECT full_name AS ФИО FROM grocery."Клиент" UNION SELECT full_name AS ФИО FROM grocery."Сотрудник" ORDER BY ФИО'),
+    ("Объединить таблицы Сотрудник и Клиент в одну по типу", 'SELECT \'Сотрудник\' AS Тип, id AS Идентификатор, full_name FROM grocery."Сотрудник" UNION ALL SELECT \'Клиент\' AS Тип, grocery."Клиент".id AS Идентификатор, full_name FROM grocery."Клиент"'),
+    ("Вывести склады, где количество продуктов выше среднего по всем складам", '''
+        WITH temporaryTable (averageQuantity) AS (
+            SELECT AVG(product_quantity) FROM grocery."Склад"
+        )
+        SELECT storage_location, address, product_quantity
+        FROM grocery."Склад", temporaryTable
+        WHERE grocery."Склад".product_quantity > temporaryTable.averageQuantity
+    '''),
+    ("Вывести id клиентов, которые сделали хотя бы один заказ", 'SELECT id FROM grocery."Клиент" INTERSECT SELECT client_id FROM grocery."Заказ"'),
+    ("Вывести всех поставщиков, которые находятся в Гомеле", 'SELECT * FROM (SELECT * FROM grocery."Поставщик" WHERE address LIKE \'Гомель%\') AS подзапрос'),
+    ("Вывести клиентов, у которых совершено более одного заказа", '''
+        SELECT client_id, order_count
+        FROM (
+            SELECT client_id, COUNT(*) AS order_count
+            FROM grocery."Заказ"
+            GROUP BY client_id
+        ) AS OrderStats
+        WHERE order_count > 1
+    '''),
+    ("Вывести данные о платежах, статус которых «Оплачен» или «Отменен»", '''
+        SELECT * FROM grocery."Платеж"
+        WHERE payment_status IN (
+            SELECT payment_status FROM grocery."Платеж"
+            WHERE payment_status LIKE '%Оплачен%' OR payment_status LIKE '%Отменен%'
+        )
+    '''),
+    ("Вывести товары, которые произведены не в Беларуси", '''
+        SELECT name, category, country, price FROM grocery."Товар"
+        EXCEPT
+        SELECT name, category, country, price FROM grocery."Товар" WHERE country LIKE '%Беларусь%'
+    '''),
+    ("Вывести склады, средняя температура которых превышает 7 градусов", '''
+        SELECT * FROM grocery."Склад"
+        WHERE storage_location IN (
+            SELECT storage_location FROM grocery."Склад"
+            GROUP BY storage_location
+            HAVING AVG(temperature) >= 7
+        )
+    ''')
+],
+
     "Custom": []
 }
 

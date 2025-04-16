@@ -1,8 +1,1 @@
-2025-04-16 15:46:51,822 - INFO - renameTable function is available
-2025-04-16 15:46:56,223 - DEBUG - deleteCustomQuery called for name: df
-2025-04-16 15:46:59,137 - DEBUG - Opening addCustomQueryWindow
-2025-04-16 15:47:13,156 - DEBUG - saveCustomQuery called with name: fdsaf, query: select * from grocery.temp
-2025-04-16 15:47:13,465 - DEBUG - Executing after_destroy for saveCustomQuery
-2025-04-16 15:47:17,162 - DEBUG - Opening editCustomQueryWindow for query: fdsaf
-2025-04-16 15:47:20,074 - DEBUG - Opening editCustomQueryWindow for query: fdsaf
-2025-04-16 15:47:23,823 - DEBUG - deleteCustomQuery called for name: fdsaf
+2025-04-16 17:06:38,653 - INFO - renameTable function is available
