@@ -1,7 +1,6 @@
 import psycopg2
 from datetime import datetime
 import os
-import subprocess
 import logging
 
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',

@@ -3,140 +3,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import json
 import os
-import ttkthemes
 import sv_ttk
 import logging
 
-# Set up logging
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-try:
-    renameTable
-    logging.info("renameTable function is available")
-except NameError:
-    logging.error("renameTable function is not imported from database")
-
 mainBgColor = "#eaeaea"
-
-QUERIES = {
-"Lab 4": [
-    ("Вывести всех сотрудников с опытом работы больше 10 лет", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 10'),
-    ("Вывести всех сотрудников с опытом работы больше 5 лет, отсортированных по ФИО", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 5 ORDER BY full_name'),
-    ("Вывести все товары, отсортированные по цене", 'SELECT * FROM grocery."Товар" ORDER BY price'),
-    ("Вывести все данные из таблицы Поставщик", 'SELECT * FROM grocery."Поставщик"'),
-    ("Вывести все склады, которые имеют расположение “Мясной склад”", 'SELECT * FROM grocery."Склад" WHERE storage_location = \'Мясной склад\''),
-    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 и стоимостью продукта более 12", 'SELECT * FROM grocery."Заказ" CROSS JOIN grocery."Товар" WHERE grocery."Заказ".total_cost > 430 AND grocery."Товар".price > 12'),
-    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 или стоимостью продукта более 12", '''
-        SELECT grocery."Заказ".order_number,
-               grocery."Товар".name AS product_name
-        FROM grocery."Заказ"
-        FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id
-        FULL OUTER JOIN grocery."Товар" ON grocery."Заказ_Товар".product_id = grocery."Товар".id
-        WHERE grocery."Заказ".total_cost > 430 OR grocery."Товар".price > 12
-    '''),
-    ("Внутреннее соединение таблиц Товар и Поставщик", 'SELECT * FROM grocery."Товар" INNER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id'),
-    ("Внутреннее соединение таблиц Клиент и Заказ с условием, что сумма заказа от 200 до 400", 'SELECT grocery."Клиент".full_name, grocery."Заказ".total_cost, grocery."Заказ".order_date FROM grocery."Клиент" INNER JOIN grocery."Заказ" ON grocery."Клиент".id = grocery."Заказ".client_id WHERE grocery."Заказ".total_cost > 200 AND grocery."Заказ".total_cost < 400'),
-    ("Левое внешнее соединение таблиц Товар и Поставщик с ценой продукта более 20", 'SELECT * FROM grocery."Товар" LEFT OUTER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id WHERE grocery."Товар".price > 20'),
-    ("Левое внешнее соединение таблиц Платеж и Заказ", '''
-        SELECT grocery."Заказ".order_number,
-               grocery."Заказ".total_cost,
-               grocery."Заказ".order_date,
-               grocery."Заказ".client_id,
-               grocery."Заказ".employee_id,
-               grocery."Платеж".payment_number,
-               grocery."Платеж".payment_date,
-               grocery."Платеж".payment_time,
-               grocery."Платеж".payment_method,
-               grocery."Платеж".payment_status
-        FROM grocery."Заказ"
-        LEFT OUTER JOIN grocery."Платеж" ON grocery."Заказ".payment_id = grocery."Платеж".id
-    '''),
-    ("Правое внешнее соединение таблиц Товар и Заказ", '''
-        SELECT grocery."Товар".id AS product_id,
-               grocery."Товар".name AS product_name,
-               grocery."Товар".country,
-               grocery."Товар".category,
-               grocery."Товар".price,
-               grocery."Заказ_Товар".order_id,
-               grocery."Заказ".order_number,
-               grocery."Заказ".total_cost,
-               grocery."Заказ".order_date
-        FROM grocery."Товар"
-        RIGHT OUTER JOIN grocery."Заказ_Товар"
-            ON grocery."Товар".id = grocery."Заказ_Товар".product_id
-        LEFT JOIN grocery."Заказ"
-            ON grocery."Заказ_Товар".order_id = grocery."Заказ".id
-    '''),
-    ("Правое внешнее соединение таблиц Склад и Товар с условием, что количество товара на складе больше 100", '''
-        SELECT grocery."Склад".id,
-               grocery."Склад".storage_location,
-               grocery."Склад".product_quantity,
-               grocery."Товар".name,
-               grocery."Товар".price
-        FROM grocery."Склад"
-        RIGHT OUTER JOIN grocery."Товар"
-            ON grocery."Склад".product_id = grocery."Товар".id
-        WHERE grocery."Склад".product_quantity > 100
-    '''),
-    ("Полное внешнее соединение таблиц Товар и Заказ", 'SELECT grocery."Заказ".*, grocery."Заказ_Товар".* FROM grocery."Заказ" FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id'),
-    ("Полное внешнее соединение таблиц Сотрудник и Заказ", 'SELECT * FROM grocery."Сотрудник" FULL OUTER JOIN grocery."Заказ" ON grocery."Сотрудник".id = grocery."Заказ".employee_id'),
-    ("Вывести сотрудников, в названии должности которых есть “Старший”", 'SELECT * FROM grocery."Сотрудник" WHERE position LIKE \'%Старший%\'')
-],
-
-"Lab 5": [
-    ("Вывести среднюю арифметическую цену всех товаров", 'SELECT AVG(price) AS Average_salary FROM grocery."Товар"'),
-    ("Вывести количество строк, где должность сотрудника заканчивается на “продавец”", 'SELECT COUNT(position) FROM grocery."Сотрудник" WHERE position LIKE \'%продавец\''),
-    ("Вывести максимальную температуру склада", 'SELECT MAX(temperature) AS Max_Temperature FROM grocery."Склад"'),
-    ("Вывести минимальную сумму заказа", 'SELECT MIN(total_cost) AS mininal_total_cost FROM grocery."Заказ"'),
-    ("Вывести общее количество товаров на складах", 'SELECT SUM(product_quantity) AS total_product_quantity FROM grocery."Склад"'),
-    ("Вычислить количество товаров в каждой категории", 'SELECT COUNT(name) AS product_amount, category AS product_category FROM grocery."Товар" GROUP BY category'),
-    ("Вывести список всех ФИО из таблиц Сотрудник и Клиент, отсортированных в алфавитном порядке", 'SELECT full_name AS ФИО FROM grocery."Клиент" UNION SELECT full_name AS ФИО FROM grocery."Сотрудник" ORDER BY ФИО'),
-    ("Объединить таблицы Сотрудник и Клиент в одну по типу", 'SELECT \'Сотрудник\' AS Тип, id AS Идентификатор, full_name FROM grocery."Сотрудник" UNION ALL SELECT \'Клиент\' AS Тип, grocery."Клиент".id AS Идентификатор, full_name FROM grocery."Клиент"'),
-    ("Вывести склады, где количество продуктов выше среднего по всем складам", '''
-        WITH temporaryTable (averageQuantity) AS (
-            SELECT AVG(product_quantity) FROM grocery."Склад"
-        )
-        SELECT storage_location, address, product_quantity
-        FROM grocery."Склад", temporaryTable
-        WHERE grocery."Склад".product_quantity > temporaryTable.averageQuantity
-    '''),
-    ("Вывести id клиентов, которые сделали хотя бы один заказ", 'SELECT id FROM grocery."Клиент" INTERSECT SELECT client_id FROM grocery."Заказ"'),
-    ("Вывести всех поставщиков, которые находятся в Гомеле", 'SELECT * FROM (SELECT * FROM grocery."Поставщик" WHERE address LIKE \'Гомель%\') AS подзапрос'),
-    ("Вывести клиентов, у которых совершено более одного заказа", '''
-        SELECT client_id, order_count
-        FROM (
-            SELECT client_id, COUNT(*) AS order_count
-            FROM grocery."Заказ"
-            GROUP BY client_id
-        ) AS OrderStats
-        WHERE order_count > 1
-    '''),
-    ("Вывести данные о платежах, статус которых «Оплачен» или «Отменен»", '''
-        SELECT * FROM grocery."Платеж"
-        WHERE payment_status IN (
-            SELECT payment_status FROM grocery."Платеж"
-            WHERE payment_status LIKE '%Оплачен%' OR payment_status LIKE '%Отменен%'
-        )
-    '''),
-    ("Вывести товары, которые произведены не в Беларуси", '''
-        SELECT name, category, country, price FROM grocery."Товар"
-        EXCEPT
-        SELECT name, category, country, price FROM grocery."Товар" WHERE country LIKE '%Беларусь%'
-    '''),
-    ("Вывести склады, средняя температура которых превышает 7 градусов", '''
-        SELECT * FROM grocery."Склад"
-        WHERE storage_location IN (
-            SELECT storage_location FROM grocery."Склад"
-            GROUP BY storage_location
-            HAVING AVG(temperature) >= 7
-        )
-    ''')
-],
-
-    "Custom": []
-}
-
 
 def initWindow():
     root = tk.Tk()
@@ -350,6 +223,282 @@ def restoreTableWindow(parent):
               font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(pady=10)
 
 
+def createAddWindow(parent):
+    global colnames
+    if selectedTable.get() == "---" or not selectedTable.get():
+        messagebox.showerror("Error", "Please select a valid table first")
+        return
+
+    window = tk.Toplevel(parent)
+    window.title("Add Record")
+    height = len(colnames) * 80 + 50
+    window.geometry(f'300x{height}')
+    window.configure(bg=mainBgColor)
+
+    def addValues():
+        values = [textField.get() for textField in textFields]
+        keyString = f"({', '.join(colnames)})"
+        result = addRecord(conn, selectedTable.get(), keyString, values)
+        if result is None:
+            table.insert('', tk.END, values=values)
+            window.destroy()
+        else:
+            messagebox.showerror("Error", result)
+
+    textFields = []
+    mainFrame = tk.Frame(window, bg=mainBgColor)
+    mainFrame.pack()
+    for field in colnames:
+        frame = tk.Frame(mainFrame, bg=mainBgColor)
+        frame.pack()
+        ttk.Label(frame, text=f'{field}:', background=mainBgColor).pack()
+        textField = ttk.Entry(frame)
+        textField.pack(pady=5)
+        textFields.append(textField)
+
+    tk.Button(window, text="Add", command=addValues, bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), pady=8,
+              padx=10).pack(pady=5)
+
+
+def createRemoveWindow(parent):
+    global selectedElement
+    if selectedElement is None or not table.exists(selectedElement):
+        messagebox.showerror("Error", "Please select a row first")
+        return
+
+    values = table.item(selectedElement, 'values')
+    paramString = ' AND '.join(f"{col} = '{val}'" for col, val in zip(colnames, values))
+    result = deleteRecord(conn, selectedTable.get(), paramString)
+    if result is None:
+        table.delete(selectedElement)
+        selectedElement = None
+    else:
+        messagebox.showerror("Error", result)
+
+
+def createUpdateWindow(parent):
+    global selectedElement, colnames
+    if selectedElement is None or not table.exists(selectedElement):
+        messagebox.showerror("Error", "Please select a row first")
+        return
+
+    logging.debug(f"Opening update window with colnames: {colnames}")
+    window = tk.Toplevel(parent)
+    window.title("Update Record")
+    height = len(colnames) * 80 + 50
+    window.geometry(f'300x{height}')
+    window.configure(bg=mainBgColor)
+
+    values = table.item(selectedElement, 'values')
+    values = [None if str(val).lower() == "none" or val == "" else val for val in values]
+
+    whereConditions = []
+    whereValues = []
+    for col, val in zip(colnames, values):
+        if val is not None:
+            whereConditions.append(f'"{col}" = %s')
+            whereValues.append(val)
+
+    if not whereConditions:
+        messagebox.showwarning("Warning", "All columns are NULL. Update may affect multiple rows or fail.")
+        whereConditions = [f'"{col}" IS NULL' for col in colnames]
+        whereValues = []
+        whereClause = ' AND '.join(whereConditions)
+    else:
+        whereClause = ' AND '.join(whereConditions)
+
+    def updateValues():
+        global selectedElement
+        newValues = [textField.get() or None for textField in textFields]
+        result, rowcount = updateRecord(conn, selectedTable.get(), colnames, newValues, whereClause, whereValues)
+        if result is None:
+            if rowcount > 1:
+                messagebox.showwarning("Warning", f"Updated {rowcount} rows. Multiple rows matched the condition.")
+            table.item(selectedElement, values=newValues)
+            window.destroy()
+            data, new_colnames = getTableData(conn, selectedTable.get())
+            updateTable(data, new_colnames)
+        else:
+            messagebox.showerror("Error", result)
+
+    textFields = []
+    mainFrame = tk.Frame(window, bg=mainBgColor)
+    mainFrame.pack()
+    for field, value in zip(colnames, values):
+        frame = tk.Frame(mainFrame, bg=mainBgColor)
+        frame.pack()
+        ttk.Label(frame, text=f'{field}:', background=mainBgColor).pack()
+        textField = ttk.Entry(frame)
+        textField.insert(0, value if value is not None else '')
+        textField.pack(pady=5)
+        textFields.append(textField)
+
+    tk.Button(window, text="Update", command=updateValues, bg='#666666', fg='#333333', font=('Arial', 12, 'bold'),
+              pady=8, padx=10).pack(pady=5)
+
+
+def editColumnWindow(table_name, tree):
+    if not table_name:
+        messagebox.showerror("Error", "No table selected")
+        return
+    selected = tree.selection()
+    if not selected:
+        messagebox.showerror("Error", "Please select a column to edit")
+        return
+
+    window = tk.Toplevel()
+    window.title("Edit Column")
+    window.geometry("300x200")
+    window.configure(bg=mainBgColor)
+
+    old_name = tree.item(selected[0])['values'][0]
+    old_type = tree.item(selected[0])['values'][1]
+    new_name_entry = ttk.Entry(window)
+    new_type_entry = ttk.Entry(window)
+
+    ttk.Label(window, text="Column Name:", background=mainBgColor).pack(pady=5)
+    new_name_entry.insert(0, old_name)
+    new_name_entry.pack(pady=5)
+    ttk.Label(window, text="Data Type:", background=mainBgColor).pack(pady=5)
+    new_type_entry.insert(0, old_type)
+    new_type_entry.pack(pady=5)
+
+    def edit_action():
+        new_name = new_name_entry.get()
+        new_type = new_type_entry.get()
+        if not new_name or not new_type:
+            messagebox.showerror("Error", "Please enter both a name and type")
+            return
+        if new_name != old_name:
+            result = renameColumn(conn, table_name, old_name, new_name)
+            if result:
+                messagebox.showerror("Error", result)
+                return
+        if new_type != old_type:
+            result = changeColumnType(conn, table_name, new_name, new_type)
+            if result:
+                messagebox.showerror("Error", result)
+                return
+        tree.item(selected[0], values=(new_name, new_type))
+        if selectedTable.get() == table_name:
+            data, colnames = getTableData(conn, table_name)
+            updateTable(data, colnames)
+        window.destroy()
+
+    tk.Button(window, text="Save", command=edit_action, bg='#666666', fg='#333333',
+              font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=10)
+
+
+def exportTableWindow(parent):
+    data, colnames = getTableData(conn, selectedTable.get())
+    filename = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
+    if filename:
+        exportToCSV(data, colnames, filename)
+
+
+def queryChoiceWindow(parent):
+    window = tk.Toplevel(parent)
+    window.title("Queries")
+    window.geometry("400x600")
+    window.configure(bg=mainBgColor)
+
+    message_frame = tk.Frame(window, bg=mainBgColor)
+    message_frame.pack(fill='x', pady=5)
+    message_label = tk.Label(message_frame, text="", bg=mainBgColor, font=('Arial', 10))
+    message_label.pack()
+
+    notebook = ttk.Notebook(window)
+    notebook.pack(fill='both', expand=True)
+
+    tab_frames = {}
+
+    for category in QUERIES:
+        frame = tk.Frame(notebook, bg=mainBgColor)
+        notebook.add(frame, text=category)
+        tab_frames[category] = frame
+
+        canvas = tk.Canvas(frame, bg=mainBgColor, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=mainBgColor)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e, c=canvas: c.configure(scrollregion=c.bbox("all"))
+        )
+
+        canvas_frame = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        def resize_canvas(event, canvas=canvas, window_id=canvas_frame):
+            canvas.itemconfig(window_id, width=event.width)
+
+        canvas.bind("<Configure>", resize_canvas)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        frame.canvas = canvas
+        frame.scrollable_frame = scrollable_frame
+
+        populate_tab(category, frame)
+
+    tk.Button(window, text="Add Custom Query",
+              command=lambda: addCustomQueryWindow(window, notebook, tab_frames["Custom"], message_label),
+              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
+    tk.Button(window, text="Export Results", command=exportQueryResults, bg='#666666', fg='#333333',
+              font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
+
+
+def addCustomQueryWindow(parent, notebook, custom_frame, message_label):
+    logging.debug("Opening addCustomQueryWindow")
+    window = tk.Toplevel(parent)
+    window.title("Add Custom Query")
+    window.geometry("400x300")
+    window.configure(bg=mainBgColor)
+
+    ttk.Label(window, text="Query Name:", background=mainBgColor).pack(pady=5)
+    name_entry = ttk.Entry(window, width=40)
+    name_entry.pack(pady=5)
+
+    ttk.Label(window, text="SQL Query:", background=mainBgColor).pack(pady=5)
+    query_text = tk.Text(window, height=5, width=40)
+    query_text.pack(pady=5)
+
+    tk.Button(window, text="Save",
+              command=lambda: saveCustomQuery(name_entry.get(), query_text.get("1.0", tk.END).strip(), window, notebook,
+                                              custom_frame, message_label, parent),
+              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(pady=10)
+
+
+def editCustomQueryWindow(parent, name, query, notebook, custom_frame, message_label):
+    logging.debug(f"Opening editCustomQueryWindow for query: {name}")
+    window = tk.Toplevel(parent)
+    window.title(f"Edit Query: {name}")
+    window.geometry("400x350")
+    window.configure(bg=mainBgColor)
+
+    ttk.Label(window, text="Query Name:", background=mainBgColor).pack(pady=5)
+    name_entry = ttk.Entry(window, width=40)
+    name_entry.insert(0, name)
+    name_entry.pack(pady=5)
+
+    ttk.Label(window, text="SQL Query:", background=mainBgColor).pack(pady=5)
+    query_text = tk.Text(window, height=5, width=40)
+    query_text.insert("1.0", query)
+    query_text.pack(pady=5)
+
+    button_frame = tk.Frame(window, bg=mainBgColor)
+    button_frame.pack(pady=10)
+
+    tk.Button(button_frame, text="Save",
+              command=lambda: updateCustomQuery(name, name_entry.get(), query_text.get("1.0", tk.END).strip(), window,
+                                                notebook, custom_frame, message_label, parent),
+              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(side=tk.LEFT,
+                                                                                                           padx=5)
+    tk.Button(button_frame, text="Execute",
+              command=lambda: [executeQuery(query_text.get("1.0", tk.END).strip()), window.destroy()],
+              bg='#66cc66', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(side=tk.LEFT,
+                                                                                                           padx=5)
 def createTableWindow(parent):
     window = tk.Toplevel(parent)
     window.title("Add New Table")
@@ -510,8 +659,8 @@ def modifyTableWindow(parent):
     columns_tree.pack(pady=10)
     columns_tree.tag_configure('evenrow', background='#f3f3f3')
 
-    tk.Button(window, text="Rename Table", command=lambda: renameTableWindow(table_var, window), bg='#666666',
-              fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
+    #tk.Button(window, text="Rename Table", command=lambda: renameTableWindow(table_var, window), bg='#666666',
+    #          fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
     tk.Button(window, text="Add Column", command=lambda: addColumnWindow(table_var, columns_tree), bg='#666666',
               fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
     tk.Button(window, text="Drop Column", command=lambda: dropColumnAction(table_var.get(), columns_tree),
@@ -619,284 +768,6 @@ def dropColumnAction(table_name, tree):
             if selectedTable.get() == table_name:
                 data, colnames = getTableData(conn, table_name)
                 updateTable(data, colnames)
-
-
-def editColumnWindow(table_name, tree):
-    if not table_name:
-        messagebox.showerror("Error", "No table selected")
-        return
-    selected = tree.selection()
-    if not selected:
-        messagebox.showerror("Error", "Please select a column to edit")
-        return
-
-    window = tk.Toplevel()
-    window.title("Edit Column")
-    window.geometry("300x200")
-    window.configure(bg=mainBgColor)
-
-    old_name = tree.item(selected[0])['values'][0]
-    old_type = tree.item(selected[0])['values'][1]
-    new_name_entry = ttk.Entry(window)
-    new_type_entry = ttk.Entry(window)
-
-    ttk.Label(window, text="Column Name:", background=mainBgColor).pack(pady=5)
-    new_name_entry.insert(0, old_name)
-    new_name_entry.pack(pady=5)
-    ttk.Label(window, text="Data Type:", background=mainBgColor).pack(pady=5)
-    new_type_entry.insert(0, old_type)
-    new_type_entry.pack(pady=5)
-
-    def edit_action():
-        new_name = new_name_entry.get()
-        new_type = new_type_entry.get()
-        if not new_name or not new_type:
-            messagebox.showerror("Error", "Please enter both a name and type")
-            return
-        if new_name != old_name:
-            result = renameColumn(conn, table_name, old_name, new_name)
-            if result:
-                messagebox.showerror("Error", result)
-                return
-        if new_type != old_type:
-            result = changeColumnType(conn, table_name, new_name, new_type)
-            if result:
-                messagebox.showerror("Error", result)
-                return
-        tree.item(selected[0], values=(new_name, new_type))
-        if selectedTable.get() == table_name:
-            data, colnames = getTableData(conn, table_name)
-            updateTable(data, colnames)
-        window.destroy()
-
-    tk.Button(window, text="Save", command=edit_action, bg='#666666', fg='#333333',
-              font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=10)
-
-
-def exportTableWindow(parent):
-    data, colnames = getTableData(conn, selectedTable.get())
-    filename = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
-    if filename:
-        exportToCSV(data, colnames, filename)
-
-
-def createAddWindow(parent):
-    global colnames
-    if selectedTable.get() == "---" or not selectedTable.get():
-        messagebox.showerror("Error", "Please select a valid table first")
-        return
-
-    window = tk.Toplevel(parent)
-    window.title("Add Record")
-    height = len(colnames) * 80 + 50
-    window.geometry(f'300x{height}')
-    window.configure(bg=mainBgColor)
-
-    def addValues():
-        values = [textField.get() for textField in textFields]
-        keyString = f"({', '.join(colnames)})"
-        result = addRecord(conn, selectedTable.get(), keyString, values)
-        if result is None:
-            table.insert('', tk.END, values=values)
-            window.destroy()
-        else:
-            messagebox.showerror("Error", result)
-
-    textFields = []
-    mainFrame = tk.Frame(window, bg=mainBgColor)
-    mainFrame.pack()
-    for field in colnames:
-        frame = tk.Frame(mainFrame, bg=mainBgColor)
-        frame.pack()
-        ttk.Label(frame, text=f'{field}:', background=mainBgColor).pack()
-        textField = ttk.Entry(frame)
-        textField.pack(pady=5)
-        textFields.append(textField)
-
-    tk.Button(window, text="Add", command=addValues, bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), pady=8,
-              padx=10).pack(pady=5)
-
-
-def createRemoveWindow(parent):
-    global selectedElement
-    if selectedElement is None or not table.exists(selectedElement):
-        messagebox.showerror("Error", "Please select a row first")
-        return
-
-    values = table.item(selectedElement, 'values')
-    paramString = ' AND '.join(f"{col} = '{val}'" for col, val in zip(colnames, values))
-    result = deleteRecord(conn, selectedTable.get(), paramString)
-    if result is None:
-        table.delete(selectedElement)
-        selectedElement = None
-    else:
-        messagebox.showerror("Error", result)
-
-
-def createUpdateWindow(parent):
-    global selectedElement, colnames
-    if selectedElement is None or not table.exists(selectedElement):
-        messagebox.showerror("Error", "Please select a row first")
-        return
-
-    logging.debug(f"Opening update window with colnames: {colnames}")
-    window = tk.Toplevel(parent)
-    window.title("Update Record")
-    height = len(colnames) * 80 + 50
-    window.geometry(f'300x{height}')
-    window.configure(bg=mainBgColor)
-
-    values = table.item(selectedElement, 'values')
-    values = [None if str(val).lower() == "none" or val == "" else val for val in values]
-
-    whereConditions = []
-    whereValues = []
-    for col, val in zip(colnames, values):
-        if val is not None:
-            whereConditions.append(f'"{col}" = %s')
-            whereValues.append(val)
-
-    if not whereConditions:
-        messagebox.showwarning("Warning", "All columns are NULL. Update may affect multiple rows or fail.")
-        whereConditions = [f'"{col}" IS NULL' for col in colnames]
-        whereValues = []
-        whereClause = ' AND '.join(whereConditions)
-    else:
-        whereClause = ' AND '.join(whereConditions)
-
-    def updateValues():
-        global selectedElement
-        newValues = [textField.get() or None for textField in textFields]
-        result, rowcount = updateRecord(conn, selectedTable.get(), colnames, newValues, whereClause, whereValues)
-        if result is None:
-            if rowcount > 1:
-                messagebox.showwarning("Warning", f"Updated {rowcount} rows. Multiple rows matched the condition.")
-            table.item(selectedElement, values=newValues)
-            window.destroy()
-            data, new_colnames = getTableData(conn, selectedTable.get())
-            updateTable(data, new_colnames)
-        else:
-            messagebox.showerror("Error", result)
-
-    textFields = []
-    mainFrame = tk.Frame(window, bg=mainBgColor)
-    mainFrame.pack()
-    for field, value in zip(colnames, values):
-        frame = tk.Frame(mainFrame, bg=mainBgColor)
-        frame.pack()
-        ttk.Label(frame, text=f'{field}:', background=mainBgColor).pack()
-        textField = ttk.Entry(frame)
-        textField.insert(0, value if value is not None else '')
-        textField.pack(pady=5)
-        textFields.append(textField)
-
-    tk.Button(window, text="Update", command=updateValues, bg='#666666', fg='#333333', font=('Arial', 12, 'bold'),
-              pady=8, padx=10).pack(pady=5)
-
-
-def queryChoiceWindow(parent):
-    window = tk.Toplevel(parent)
-    window.title("Queries")
-    window.geometry("400x600")
-    window.configure(bg=mainBgColor)
-
-    message_frame = tk.Frame(window, bg=mainBgColor)
-    message_frame.pack(fill='x', pady=5)
-    message_label = tk.Label(message_frame, text="", bg=mainBgColor, font=('Arial', 10))
-    message_label.pack()
-
-    notebook = ttk.Notebook(window)
-    notebook.pack(fill='both', expand=True)
-
-    tab_frames = {}
-
-    for category in QUERIES:
-        frame = tk.Frame(notebook, bg=mainBgColor)
-        notebook.add(frame, text=category)
-        tab_frames[category] = frame
-
-        canvas = tk.Canvas(frame, bg=mainBgColor, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=mainBgColor)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e, c=canvas: c.configure(scrollregion=c.bbox("all"))
-        )
-
-        canvas_frame = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-
-        def resize_canvas(event, canvas=canvas, window_id=canvas_frame):
-            canvas.itemconfig(window_id, width=event.width)
-
-        canvas.bind("<Configure>", resize_canvas)
-
-        canvas.configure(yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        frame.canvas = canvas
-        frame.scrollable_frame = scrollable_frame
-
-        populate_tab(category, frame)
-
-    tk.Button(window, text="Add Custom Query",
-              command=lambda: addCustomQueryWindow(window, notebook, tab_frames["Custom"], message_label),
-              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
-    tk.Button(window, text="Export Results", command=exportQueryResults, bg='#666666', fg='#333333',
-              font=('Arial', 12, 'bold'), pady=8, padx=10).pack(pady=5)
-
-
-def addCustomQueryWindow(parent, notebook, custom_frame, message_label):
-    logging.debug("Opening addCustomQueryWindow")
-    window = tk.Toplevel(parent)
-    window.title("Add Custom Query")
-    window.geometry("400x300")
-    window.configure(bg=mainBgColor)
-
-    ttk.Label(window, text="Query Name:", background=mainBgColor).pack(pady=5)
-    name_entry = ttk.Entry(window, width=40)
-    name_entry.pack(pady=5)
-
-    ttk.Label(window, text="SQL Query:", background=mainBgColor).pack(pady=5)
-    query_text = tk.Text(window, height=5, width=40)
-    query_text.pack(pady=5)
-
-    tk.Button(window, text="Save",
-              command=lambda: saveCustomQuery(name_entry.get(), query_text.get("1.0", tk.END).strip(), window, notebook,
-                                              custom_frame, message_label, parent),
-              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(pady=10)
-
-
-def editCustomQueryWindow(parent, name, query, notebook, custom_frame, message_label):
-    logging.debug(f"Opening editCustomQueryWindow for query: {name}")
-    window = tk.Toplevel(parent)
-    window.title(f"Edit Query: {name}")
-    window.geometry("400x350")
-    window.configure(bg=mainBgColor)
-
-    ttk.Label(window, text="Query Name:", background=mainBgColor).pack(pady=5)
-    name_entry = ttk.Entry(window, width=40)
-    name_entry.insert(0, name)
-    name_entry.pack(pady=5)
-
-    ttk.Label(window, text="SQL Query:", background=mainBgColor).pack(pady=5)
-    query_text = tk.Text(window, height=5, width=40)
-    query_text.insert("1.0", query)
-    query_text.pack(pady=5)
-
-    button_frame = tk.Frame(window, bg=mainBgColor)
-    button_frame.pack(pady=10)
-
-    tk.Button(button_frame, text="Save",
-              command=lambda: updateCustomQuery(name, name_entry.get(), query_text.get("1.0", tk.END).strip(), window,
-                                                notebook, custom_frame, message_label, parent),
-              bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(side=tk.LEFT,
-                                                                                                           padx=5)
-    tk.Button(button_frame, text="Execute",
-              command=lambda: [executeQuery(query_text.get("1.0", tk.END).strip()), window.destroy()],
-              bg='#66cc66', fg='#333333', font=('Arial', 12, 'bold'), relief='flat', pady=8, padx=10).pack(side=tk.LEFT,
-                                                                                                           padx=5)
 
 
 def saveCustomQuery(name, query, window, notebook, custom_frame, message_label, root):
@@ -1038,26 +909,143 @@ def populate_tab(category, frame):
         query_frame.pack(pady=2, fill='x')
 
         if category == "Custom":
-            btn = tk.Button(query_frame, text=name,
-                            command=lambda n=name, q=query: editCustomQueryWindow(frame.winfo_toplevel(), n, q,
-                                                                                  frame.master, frame,
-                                                                                  frame.winfo_toplevel().nametowidget(
-                                                                                      '!frame').winfo_children()[0]),
-                            bg='#666666', fg='#333333', font=('Arial', 12, 'bold'), width=30, anchor='w', pady=8,
-                            padx=10)
-            btn.pack(side=tk.LEFT)
+            label = tk.Label(query_frame, text=name, bg="#ffffff", fg='#333333', font=('Arial', 12),
+                             wraplength=300, justify='left', anchor='w')
+            label.pack(side=tk.LEFT, padx=10, pady=8, fill='x', expand=True)
+            label.bind('<Button-1>', lambda e, n=name, q=query: editCustomQueryWindow(
+                frame.winfo_toplevel(), n, q, frame.master, frame,
+                frame.winfo_toplevel().nametowidget('!frame').winfo_children()[0]))
 
             delete_btn = tk.Button(query_frame, text="Delete",
                                    command=lambda n=name: deleteCustomQuery(n, frame.master, frame),
                                    bg='#ff6666', fg='#333333', font=('Arial', 10), relief='flat', pady=4, padx=6)
-            delete_btn.pack(side=tk.RIGHT)
+            delete_btn.pack(side=tk.RIGHT, padx=5)
         else:
-            btn = tk.Button(query_frame, text=name, command=lambda q=query: executeQuery(q), bg='#666666',
-                            fg='#333333', font=('Arial', 12, 'bold'), width=30, anchor='w', pady=8, padx=10)
-            btn.pack(side=tk.LEFT)
+            # Use a Label with wraplength for Lab 4 and Lab 5 queries
+            label = tk.Label(query_frame, text=name, bg='#ffffff', fg='#333333', font=('Arial', 12, 'bold'),
+                             wraplength=300, justify='left', anchor='w', pady=8, padx=10)
+            label.pack(side=tk.LEFT, fill='x', expand=True)
+            label.bind('<Button-1>', lambda e, q=query: executeQuery(q))
 
     scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
+QUERIES = {
+"Lab 4": [
+    ("Вывести всех сотрудников с опытом работы больше 10 лет", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 10'),
+    ("Вывести всех сотрудников с опытом работы больше 5 лет, отсортированных по ФИО", 'SELECT * FROM grocery."Сотрудник" WHERE experience > 5 ORDER BY full_name'),
+    ("Вывести все товары, отсортированные по цене", 'SELECT * FROM grocery."Товар" ORDER BY price'),
+    ("Вывести все данные из таблицы Поставщик", 'SELECT * FROM grocery."Поставщик"'),
+    ("Вывести все склады, которые имеют расположение “Мясной склад”", 'SELECT * FROM grocery."Склад" WHERE storage_location = \'Мясной склад\''),
+    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 и стоимостью продукта более 12", 'SELECT * FROM grocery."Заказ" CROSS JOIN grocery."Товар" WHERE grocery."Заказ".total_cost > 430 AND grocery."Товар".price > 12'),
+    ("Перекрёстное соединение таблиц Заказ и Товар с полной стоимостью заказа более 430 или стоимостью продукта более 12", '''
+        SELECT grocery."Заказ".order_number,
+               grocery."Товар".name AS product_name
+        FROM grocery."Заказ"
+        FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id
+        FULL OUTER JOIN grocery."Товар" ON grocery."Заказ_Товар".product_id = grocery."Товар".id
+        WHERE grocery."Заказ".total_cost > 430 OR grocery."Товар".price > 12
+    '''),
+    ("Внутреннее соединение таблиц Товар и Поставщик", 'SELECT * FROM grocery."Товар" INNER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id'),
+    ("Внутреннее соединение таблиц Клиент и Заказ с условием, что сумма заказа от 200 до 400", 'SELECT grocery."Клиент".full_name, grocery."Заказ".total_cost, grocery."Заказ".order_date FROM grocery."Клиент" INNER JOIN grocery."Заказ" ON grocery."Клиент".id = grocery."Заказ".client_id WHERE grocery."Заказ".total_cost > 200 AND grocery."Заказ".total_cost < 400'),
+    ("Левое внешнее соединение таблиц Товар и Поставщик с ценой продукта более 20", 'SELECT * FROM grocery."Товар" LEFT OUTER JOIN grocery."Поставщик" ON grocery."Товар".supplier_id = grocery."Поставщик".id WHERE grocery."Товар".price > 20'),
+    ("Левое внешнее соединение таблиц Платеж и Заказ", '''
+        SELECT grocery."Заказ".order_number,
+               grocery."Заказ".total_cost,
+               grocery."Заказ".order_date,
+               grocery."Заказ".client_id,
+               grocery."Заказ".employee_id,
+               grocery."Платеж".payment_number,
+               grocery."Платеж".payment_date,
+               grocery."Платеж".payment_time,
+               grocery."Платеж".payment_method,
+               grocery."Платеж".payment_status
+        FROM grocery."Заказ"
+        LEFT OUTER JOIN grocery."Платеж" ON grocery."Заказ".payment_id = grocery."Платеж".id
+    '''),
+    ("Правое внешнее соединение таблиц Товар и Заказ", '''
+        SELECT grocery."Товар".id AS product_id,
+               grocery."Товар".name AS product_name,
+               grocery."Товар".country,
+               grocery."Товар".category,
+               grocery."Товар".price,
+               grocery."Заказ_Товар".order_id,
+               grocery."Заказ".order_number,
+               grocery."Заказ".total_cost,
+               grocery."Заказ".order_date
+        FROM grocery."Товар"
+        RIGHT OUTER JOIN grocery."Заказ_Товар"
+            ON grocery."Товар".id = grocery."Заказ_Товар".product_id
+        LEFT JOIN grocery."Заказ"
+            ON grocery."Заказ_Товар".order_id = grocery."Заказ".id
+    '''),
+    ("Правое внешнее соединение таблиц Склад и Товар с условием, что количество товара на складе больше 100", '''
+        SELECT grocery."Склад".id,
+               grocery."Склад".storage_location,
+               grocery."Склад".product_quantity,
+               grocery."Товар".name,
+               grocery."Товар".price
+        FROM grocery."Склад"
+        RIGHT OUTER JOIN grocery."Товар"
+            ON grocery."Склад".product_id = grocery."Товар".id
+        WHERE grocery."Склад".product_quantity > 100
+    '''),
+    ("Полное внешнее соединение таблиц Товар и Заказ", 'SELECT grocery."Заказ".*, grocery."Заказ_Товар".* FROM grocery."Заказ" FULL OUTER JOIN grocery."Заказ_Товар" ON grocery."Заказ".id = grocery."Заказ_Товар".order_id'),
+    ("Полное внешнее соединение таблиц Сотрудник и Заказ", 'SELECT * FROM grocery."Сотрудник" FULL OUTER JOIN grocery."Заказ" ON grocery."Сотрудник".id = grocery."Заказ".employee_id'),
+    ("Вывести сотрудников, в названии должности которых есть “Старший”", 'SELECT * FROM grocery."Сотрудник" WHERE position LIKE \'%Старший%\'')
+],
+
+"Lab 5": [
+    ("Вывести среднюю арифметическую цену всех товаров", 'SELECT AVG(price) AS Average_salary FROM grocery."Товар"'),
+    ("Вывести количество строк, где должность сотрудника заканчивается на “продавец”", 'SELECT COUNT(position) FROM grocery."Сотрудник" WHERE position LIKE \'%продавец\''),
+    ("Вывести максимальную температуру склада", 'SELECT MAX(temperature) AS Max_Temperature FROM grocery."Склад"'),
+    ("Вывести минимальную сумму заказа", 'SELECT MIN(total_cost) AS mininal_total_cost FROM grocery."Заказ"'),
+    ("Вывести общее количество товаров на складах", 'SELECT SUM(product_quantity) AS total_product_quantity FROM grocery."Склад"'),
+    ("Вычислить количество товаров в каждой категории", 'SELECT COUNT(name) AS product_amount, category AS product_category FROM grocery."Товар" GROUP BY category'),
+    ("Вывести список всех ФИО из таблиц Сотрудник и Клиент, отсортированных в алфавитном порядке", 'SELECT full_name AS ФИО FROM grocery."Клиент" UNION SELECT full_name AS ФИО FROM grocery."Сотрудник" ORDER BY ФИО'),
+    ("Объединить таблицы Сотрудник и Клиент в одну по типу", 'SELECT \'Сотрудник\' AS Тип, id AS Идентификатор, full_name FROM grocery."Сотрудник" UNION ALL SELECT \'Клиент\' AS Тип, grocery."Клиент".id AS Идентификатор, full_name FROM grocery."Клиент"'),
+    ("Вывести склады, где количество продуктов выше среднего по всем складам", '''
+        WITH temporaryTable (averageQuantity) AS (
+            SELECT AVG(product_quantity) FROM grocery."Склад"
+        )
+        SELECT storage_location, address, product_quantity
+        FROM grocery."Склад", temporaryTable
+        WHERE grocery."Склад".product_quantity > temporaryTable.averageQuantity
+    '''),
+    ("Вывести id клиентов, которые сделали хотя бы один заказ", 'SELECT id FROM grocery."Клиент" INTERSECT SELECT client_id FROM grocery."Заказ"'),
+    ("Вывести всех поставщиков, которые находятся в Гомеле", 'SELECT * FROM (SELECT * FROM grocery."Поставщик" WHERE address LIKE \'Гомель%\') AS подзапрос'),
+    ("Вывести клиентов, у которых совершено более одного заказа", '''
+        SELECT client_id, order_count
+        FROM (
+            SELECT client_id, COUNT(*) AS order_count
+            FROM grocery."Заказ"
+            GROUP BY client_id
+        ) AS OrderStats
+        WHERE order_count > 1
+    '''),
+    ("Вывести данные о платежах, статус которых «Оплачен» или «Отменен»", '''
+        SELECT * FROM grocery."Платеж"
+        WHERE payment_status IN (
+            SELECT payment_status FROM grocery."Платеж"
+            WHERE payment_status LIKE '%Оплачен%' OR payment_status LIKE '%Отменен%'
+        )
+    '''),
+    ("Вывести товары, которые произведены не в Беларуси", '''
+        SELECT name, category, country, price FROM grocery."Товар"
+        EXCEPT
+        SELECT name, category, country, price FROM grocery."Товар" WHERE country LIKE '%Беларусь%'
+    '''),
+    ("Вывести склады, средняя температура которых превышает 7 градусов", '''
+        SELECT * FROM grocery."Склад"
+        WHERE storage_location IN (
+            SELECT storage_location FROM grocery."Склад"
+            GROUP BY storage_location
+            HAVING AVG(temperature) >= 7
+        )
+    ''')
+],
+
+    "Custom": []
+}
 
 selectedElement = None
 CRUDbuttons = []
